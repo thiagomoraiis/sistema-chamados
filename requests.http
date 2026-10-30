@@ -1,0 +1,224 @@
+### === SETORES ===
+
+### Criar setor
+POST http://localhost:8080/setores
+Content-Type: application/json
+
+{
+  "nome": "Secretaria Acadêmica",
+  "sigla": "SECAD"
+}
+
+### Listar setores
+GET http://localhost:8080/setores?page=0&size=10
+
+### Listar setores filtrando por nome
+GET http://localhost:8080/setores?nome=tecnologia
+
+### Buscar setor por id
+GET http://localhost:8080/setores/1
+
+### Atualizar setor
+PUT http://localhost:8080/setores/1
+Content-Type: application/json
+
+{
+  "nome": "COTIC Atualizado",
+  "sigla": "COTIC"
+}
+
+### Excluir setor (falha se tiver chamados vinculados)
+DELETE http://localhost:8080/setores/1
+
+### Listar categorias de um setor
+GET http://localhost:8080/setores/1/categorias
+
+
+### === CATEGORIAS ===
+
+### Criar categoria
+POST http://localhost:8080/categorias
+Content-Type: application/json
+
+{
+  "nome": "Software",
+  "descricao": "Instalação e configuração de software",
+  "setorId": 1
+}
+
+### Listar categorias com filtros
+GET http://localhost:8080/categorias?nome=rede&setorId=1
+
+### Buscar categoria por id
+GET http://localhost:8080/categorias/1
+
+### Atualizar categoria
+PUT http://localhost:8080/categorias/1
+Content-Type: application/json
+
+{
+  "nome": "Rede e Wi-Fi",
+  "descricao": "Problemas de conectividade",
+  "setorId": 1
+}
+
+### Excluir categoria (falha se tiver chamados vinculados)
+DELETE http://localhost:8080/categorias/1
+
+
+### === USUARIOS ===
+
+### Criar usuário solicitante
+POST http://localhost:8080/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Pedro Lima",
+  "email": "pedro.lima@ifrn.edu.br",
+  "matricula": "20230005",
+  "tipo": "SOLICITANTE"
+}
+
+### Criar usuário técnico
+POST http://localhost:8080/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Laura Costa",
+  "email": "laura.costa@ifrn.edu.br",
+  "matricula": "20230006",
+  "tipo": "TECNICO",
+  "setorId": 1
+}
+
+### Listar usuários com filtros
+GET http://localhost:8080/usuarios?tipo=TECNICO&setorId=1
+
+### Buscar usuário por id
+GET http://localhost:8080/usuarios/1
+
+### Atualizar usuário
+PUT http://localhost:8080/usuarios/1
+Content-Type: application/json
+
+{
+  "nome": "Carlos Silva Jr",
+  "email": "carlos.silva@ifrn.edu.br",
+  "matricula": "20230001",
+  "tipo": "TECNICO",
+  "setorId": 1
+}
+
+
+### === CHAMADOS ===
+
+### Abrir chamado
+POST http://localhost:8080/chamados
+Content-Type: application/json
+
+{
+  "titulo": "Projetor não liga",
+  "descricao": "O projetor da sala B3 não está funcionando",
+  "local": "Bloco B, Sala 3",
+  "prioridade": "ALTA",
+  "categoriaId": 2,
+  "solicitanteId": 3
+}
+
+### Abrir chamado sem prioridade (padrão MEDIA)
+POST http://localhost:8080/chamados
+Content-Type: application/json
+
+{
+  "titulo": "Wi-Fi instável no laboratório",
+  "descricao": "A conexão Wi-Fi cai constantemente no Lab 1",
+  "local": "Bloco A, Laboratório 1",
+  "categoriaId": 1,
+  "solicitanteId": 4
+}
+
+### Listar chamados com filtros e paginação
+GET http://localhost:8080/chamados?status=ABERTO&setorId=1&prioridade=ALTA&page=0&size=10&sort=dataAbertura,desc
+
+### Detalhar chamado (com interações)
+GET http://localhost:8080/chamados/1
+
+### Listar chamados de um usuário
+GET http://localhost:8080/usuarios/3/chamados?status=ABERTO
+
+### Técnico assume o chamado
+PATCH http://localhost:8080/chamados/1/assumir
+Content-Type: application/json
+
+{
+  "tecnicoId": 1
+}
+
+### Registrar interação (solicitante)
+POST http://localhost:8080/chamados/1/interacoes
+Content-Type: application/json
+
+{
+  "texto": "O problema persiste, precisamos resolver urgente",
+  "autorId": 3
+}
+
+### Registrar interação (técnico)
+POST http://localhost:8080/chamados/1/interacoes
+Content-Type: application/json
+
+{
+  "texto": "Vou verificar o equipamento hoje à tarde",
+  "autorId": 1
+}
+
+### Técnico resolve o chamado
+PATCH http://localhost:8080/chamados/1/resolver
+Content-Type: application/json
+
+{
+  "tecnicoId": 1,
+  "solucao": "Lâmpada do projetor substituída com sucesso"
+}
+
+### Solicitante cancela chamado (apenas se ABERTO)
+PATCH http://localhost:8080/chamados/2/cancelar
+Content-Type: application/json
+
+{
+  "solicitanteId": 4
+}
+
+
+### === TESTES DE REGRAS DE NEGÓCIO ===
+
+### Erro: TECNICO tentando abrir chamado (deve retornar 409)
+POST http://localhost:8080/chamados
+Content-Type: application/json
+
+{
+  "titulo": "Teste inválido",
+  "descricao": "Técnico não pode abrir chamado",
+  "local": "Teste",
+  "categoriaId": 1,
+  "solicitanteId": 1
+}
+
+### Erro: email duplicado (deve retornar 409)
+POST http://localhost:8080/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Duplicado",
+  "email": "carlos.silva@ifrn.edu.br",
+  "matricula": "20230099",
+  "tipo": "SOLICITANTE"
+}
+
+### Erro: técnico de outro setor tentando assumir (deve retornar 409)
+PATCH http://localhost:8080/chamados/1/assumir
+Content-Type: application/json
+
+{
+  "tecnicoId": 2
+}
